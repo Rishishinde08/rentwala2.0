@@ -97,6 +97,14 @@ app.put("/listings/:id", async (req, res) => {
 });
 
 
+// delete route
+app.delete("/listings/:id", async (req, res) => {
+    let {id} = req.params;
+   let deletedListing =  await Listing.findByIdAndDelete(id);
+   console.log(deletedListing);
+    res.redirect("/listings");
+});
+
 
 // port start on page 
 app.listen(port, () => {
