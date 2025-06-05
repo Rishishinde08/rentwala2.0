@@ -71,7 +71,7 @@ app.get("/listings/new", (req, res) => {
 });
 
 app.post("/listings", async (req, res) => {
-    let newListing = new Listing(req.body);
+    let newListing = new Listing(req.body.listing);
     await newListing.save();
     res.redirect(`/listings/${newListing._id}`);
 });

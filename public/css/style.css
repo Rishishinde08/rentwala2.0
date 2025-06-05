@@ -1,12 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 *{
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+
+body{
+    font-family: "Plus Jakarta Sans", sans-serif !important;
+}
+
 .navbar{
     height: 5rem;
+    width: 100% !important;
     background-color: #fff;
+    /* margin: 2rem !important; */
 }
 
 .fa-compass{
@@ -18,4 +26,83 @@
     color: #222222 !important;
     font-weight: 600;
     font-size: 1.2rem;
+}
+
+
+/* footr  */
+
+
+.footer-info{
+   display: flex;
+   text-align: center;
+    height: fit-content;
+    width: 100%;
+    margin-top: 1rem;
+
+   justify-content: center;
+   flex-direction: column;
+   align-items: center;
+   padding: 1rem;
+   background-color: #222222;
+   color: #fff;
+}
+
+.f-info-socials{
+    padding: 2rem;
+    background-color: #222222;
+    color: #fff;
+}
+
+.f-info-socials{
+    display: flex;
+    gap: 1rem;
+}
+
+.f-info-socials a{
+    color: #fff;
+    font-size: 1.5rem;
+}
+
+
+/* cards  */
+
+.listing-link{
+    text-decoration: none !important;
+}
+
+.card{
+    border: none !important;
+    margin-bottom: 2rem;
+    /* margin: 2rem 1rem 2rem 1rem !important; */
+
+    /* margin-left: 1rem;
+    margin-right: 1rem; */
+
+}
+
+.card-img-top{
+    border-radius: 1rem !important;
+    width: 100% !important;
+    object-fit: cover !important;
+}
+
+.card-body{
+    padding: 0rem;
+}
+
+.card-text p{
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+/* CARD EFFECT  */
+.card-img-overlay{
+    opacity: 0 !important;
+}
+
+.card-img-overlay:hover{
+    opacity: 0.2 !important;
+    background-color: #fffefe !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease-in-out !important;
 }

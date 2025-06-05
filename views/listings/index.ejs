@@ -12,11 +12,35 @@
 <body>
     <h1>all listings</h1>
 
+    <div class="row row-cols-lg-3 row-cols-md-3 row-cols-sm-2 row-cols-xs-1">
+
+        <% for(let listing of listings){ %>
+            <div class="card  col-lg-3 col-md-6 col-sm-12 col-xs-12 ">
+
+                <a href="/listings/<%= listing._id %>" class="listing-link">
+
+                <img src="<%= listing.image.url %>" alt="listing image" class="card-img-top" style="height: 20rem;">
+                <div class="card-img-overlay"></div>
+                <div class="card-body">
+                  <p class="card-text" style="font-weight: bold;"><%= listing.title %></p>
+                  <p class="card-text"><%= listing.description %></p>
+                  <p class="card-text" style="font-weight: bold;"><%= "₹" + listing.price.toLocaleString("en-IN") %></p>
+                  <!-- <p class="card-text"><%= listing.location %></p>
+                  <p class="card-text"><%= listing.country %></p> -->
+
+                </a>
+                </div>
+              </div>
+              <% } %>
+
+
+    </div>
+
+   
+
     <!-- <form action="/listings/new" method="GET"><button>Add new listing</button></form> -->
 
-    <% for(let listing of listings){ %>
-        <p> <a href="/listings/<%= listing._id %>"> <%= listing.title %>  </a></p>
-    <% } %>
+  
 
 </body>
 <!-- </html> -->

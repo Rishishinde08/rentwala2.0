@@ -10,10 +10,13 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "cloudinary": "^1.41.3",
     "ejs": "^3.1.10",
     "ejs-mate": "^4.0.0",
     "express": "^5.1.0",
     "method-override": "^3.0.0",
-    "mongoose": "^8.15.1"
+    "mongoose": "^8.15.1",
+    "multer": "^2.0.1",
+    "multer-storage-cloudinary": "^4.0.0"
   }
 }
