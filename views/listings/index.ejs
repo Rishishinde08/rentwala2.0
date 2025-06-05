@@ -1,21 +1,25 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>home page</title>
-</head>
+</head> -->
+
+<%- layout("layouts/boilerplate.ejs") %>
+
+
 <body>
     <h1>all listings</h1>
 
-    <form action="/listings/new" method="GET"><button>Add new listing</button></form>
+    <!-- <form action="/listings/new" method="GET"><button>Add new listing</button></form> -->
 
     <% for(let listing of listings){ %>
         <p> <a href="/listings/<%= listing._id %>"> <%= listing.title %>  </a></p>
     <% } %>
 
 </body>
-</html>
+<!-- </html> -->
 
 
 
