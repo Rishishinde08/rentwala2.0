@@ -6,6 +6,7 @@ const Listing  = require("./models/listing.js");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
+const Review = require("./models/review.js");   
 
 
 
@@ -70,10 +71,18 @@ app.get("/listings/new", (req, res) => {
     res.render("listings/new");
 });
 
-app.post("/listings", async (req, res) => {
-    let newListing = new Listing(req.body.listing);
-    await newListing.save();
-    res.redirect(`/listings/${newListing._id}`);
+app.post("/listings", async (req, res, next) => {
+    try {
+        if (!req.body.listing) {
+            throw new Error("No listing data provided");
+        }
+        let newListing = new Listing(req.body.listing);
+        await newListing.save();
+        res.redirect(`/listings/${newListing._id}`);
+    } catch (e) {
+        console.log("Error creating listing:", e);
+        next(e);
+    }
 });
 
 //show route
@@ -108,6 +117,56 @@ app.delete("/listings/:id", async (req, res) => {
    console.log(deletedListing);
     res.redirect("/listings");
 });
+
+// error handling middleware
+app.use((err, req, res, next) => {
+    res.status(500).send(err.message);
+});
+
+// review route, post route
+// app.post("/listings/:id/reviews", async (req, res) => {
+
+//     let listing = await Listing.findById(req.params.id);
+//     let newReview = new Review(req.body.review);
+
+//     listing.reviews.push(newReview);
+//     await newReview.save();
+//     await listing.save();
+
+//     console.log("new review added ");
+//     res.send("new review added ");
+
+// });
+
+app.post("/listings/:id/reviews", async (req, res, next) => {
+    try {
+        let listing = await Listing.findById(req.params.id);
+
+        if (!listing) {
+            return res.status(404).send("Listing not found");
+        }
+
+        // Create new review
+        let newReview = new Review(req.body.review);
+        await newReview.save();
+
+        // Ensure reviews array exists
+        if (!Array.isArray(listing.reviews)) {
+            listing.reviews = [];
+        }
+
+        // Push review's ID (not the full object)
+        listing.reviews.push(newReview._id);
+        await listing.save();
+
+        console.log("New review added");
+        res.redirect(`/listings/${listing._id}`);
+    } catch (err) {
+        console.error("Error adding review:", err);
+        next(err);
+    }
+});
+
 
 
 // port start on page 

@@ -30,4 +30,17 @@
             </div>
         </div>
     </div>
+
+    <h4>Reviews</h4>
+    <form action="/listings/<%= listing._id %>/reviews" method="POST">
+        <div class="form-group">
+            <label for="comment" class="form-label">Comment</label>
+            <textarea class="form-control" id="comment" name="review[comment]" required cols="30" rows="10" placeholder="Enter your review here"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="rating" class="form-label">Rating</label>
+            <input type="range" min="1" max="5" class="form-range" id="rating" name="review[rating]" required style="width: 50%;">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
 </body>
