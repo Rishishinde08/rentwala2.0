@@ -22,7 +22,6 @@ app.use(express.urlencoded({extended: true}));
 app.use(methodOverride("_method"));
 app.engine("ejs", ejsMate);
 
-
 // SESSION middleware (required for flash messages)
 app.use(session({
     secret: 'yourSecretKey',
@@ -33,19 +32,21 @@ app.use(session({
 // FLASH middleware (must come after session)
 app.use(flash());
 
-
-
-
 // passport 
 app.use(passport.initialize());
-// app.use(passport.session());
+app.use(passport.session());
 passport.use(new LocalStrategy(User.authenticate()));
 
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-
-
+// Middleware to make flash messages and authentication status available to all templates
+app.use((req, res, next) => {
+    res.locals.success = req.flash("success");
+    res.locals.error = req.flash("error");
+    res.locals.currUser = req.user;
+    next();
+});
 
 // Database connect 
 const MONGO_URL = "mongodb://127.0.0.1:27017/rentwala";
@@ -74,17 +75,26 @@ app.get("/demouser", async (req, res) => {
 
 
 app.get("/signup", (req, res) => {  
-    res.render("users/signup.ejs");
+    res.render("users/signup.ejs", {
+        success: req.flash("success"),
+        error: req.flash("error")
+    });
 });
 
 app.post("/signup", async (req, res) => {
-    let {username, email, password} = req.body;
-    let newUser = new User({username, email});
-    let registeredUser = await User.register(newUser, password);
-    // res.send(registeredUser);
-    console.log(registeredUser);
-    // req.flash("success", "Welcome to Rentwala");
-    res.redirect("/listings");
+    try {
+        let {username, email, password} = req.body;
+        let newUser = new User({username, email});
+        let registeredUser = await User.register(newUser, password);
+        req.login(registeredUser, (err) => {
+            if(err) return next(err);
+            req.flash("success", "Welcome to Rentwala!");
+            res.redirect("/listings");
+        });
+    } catch(e) {
+        req.flash("error", e.message);
+        res.redirect("/signup");
+    }
 });
 
 // passport user login 
@@ -100,6 +110,19 @@ app.post("/login", passport.authenticate("local", {failureRedirect: "/login", fa
     req.flash("success", "Welcome back");
     res.redirect("/listings");
 });
+
+// logout route
+app.get("/logout", (req, res) => {
+    req.logout((err) => {
+        if(err) return next(err);
+        
+        req.flash("success", "Goodbye!");
+        res.redirect("/listings");
+        console.log("logout successful");
+    });
+});
+
+
 
 
 
@@ -135,8 +158,15 @@ app.get("/listings", async (req, res) => {
 
 //new listing route
 app.get("/listings/new", (req, res) => {
-    res.render("listings/new");
+    if (!req.isAuthenticated()) {
+        req.flash("error", "You must be logged in to create a listing");
+        return res.redirect("/login");
+    }
+
+    res.render("listings/new.ejs");
 });
+
+
 
 app.post("/listings", async (req, res, next) => {
     try {
