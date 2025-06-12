@@ -1,245 +1,164 @@
-const express = require("express");
-const app = express();
-const ejs = require("ejs");
-const mongoose = require("mongoose");
-const Listing  = require("./models/listing.js");
-const path = require("path");
-const methodOverride = require("method-override");
-const ejsMate = require("ejs-mate");
-const Review = require("./models/review.js");   
-const passport = require("passport");
-const LocalStrategy = require("passport-local");
-const User = require("./models/user.js");
+if(process.env.NODE_ENV !="production"){
+    require("dotenv").config();
+  }
+  
+  
+  const express = require("express");
+  const app = express();
+  const path = require("path");
+  const mongoose = require("mongoose");
+  const Listing = require("./modules/listing");
+  const methodOverride = require("method-override");
+  const ejsMate = require('ejs-mate');
+  const { title } = require("process");
+  const wrapAsync = require("./utils/wrapAsync.js");
+  const expressError = require('./utils/ExpressError.js');
+  
+  const {listingSchema,reviewSchema} = require("./schema.js");
+  const Review = require("./modules/review");
+  const session =  require("express-session");
+  const MongoStore = require('connect-mongo');
+  const flash = require("connect-flash");
+  const passport =  require("passport");
+  const LocalStrategy = require("passport-local");
+  const User = require("./modules/user.js");
+  
+  
+  const listingRouter = require("./routes/listing.js");
+  const reviewRouter =  require("./routes/review.js");
+  const userRouter =  require("./routes/user.js");
+  const { cookie } = require("express-validator");
+  
+  app.set("view engine","ejs");
+  app.set("views",path.join(__dirname,"views"));
+  app.use(express.urlencoded({ extended: true }));
+  app.use(methodOverride('_method'));
+  app.engine('ejs', ejsMate);
+  app.use(express.static(path.join(__dirname,"/public")));
+  
+  const dbUrl = process.env.ATLAS_URL;
+  
+  const store = MongoStore.create({
+      mongoUrl:dbUrl,
+      crypto:{
+          secret:process.env.SECRET,
+      },
+      touchAfter:24*3600,
+  });
+  store.on("error",(err)=>{
+      console.log("Error in store",err);
+  })
+  const optionSession = {
+      store,
+      secret:process.env.SECRET,
+      resave:false,
+      saveUninitialized:true,
+      cookie:{
+          expires:Date.now()+7*24*60*60*1000,
+          maxAge:7*24*60*60*1000,
+          httpOnly:true,
+      }
+  }
+  
 
-const session = require('express-session');
-const flash = require('connect-flash');
+  async function main() {
+      try {
+          await mongoose.connect(dbUrl); 
+          console.log("MongoDB connected successfully!");
+      } catch (err) {
+          console.error("MongoDB connection failed:", err);
+      }
+  }
 
-port = 8080;
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-app.use(express.static(path.join(__dirname, "/public")));
-app.use(express.urlencoded({extended: true}));
-app.use(methodOverride("_method"));
-app.engine("ejs", ejsMate);
-
-// SESSION middleware (required for flash messages)
-app.use(session({
-    secret: 'yourSecretKey',
-    resave: false,
-    saveUninitialized: false
-}));
-
-// FLASH middleware (must come after session)
-app.use(flash());
-
-// passport 
-app.use(passport.initialize());
-app.use(passport.session());
-passport.use(new LocalStrategy(User.authenticate()));
-
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
-
-// Middleware to make flash messages and authentication status available to all templates
-app.use((req, res, next) => {
-    res.locals.success = req.flash("success");
-    res.locals.error = req.flash("error");
-    res.locals.currUser = req.user;
-    next();
-});
-
-// Database connect 
-const MONGO_URL = "mongodb://127.0.0.1:27017/rentwala";
-
-main()
-    .then(()=>{
-    console.log("Database connected");
-    }).catch((err)=>{
-    console.log(err);
-});
-
-
-async function main() {
-   await mongoose.connect(MONGO_URL);
-//    console.log("Database connected");
-}
-
-
-// passport user signup 
-
-app.get("/demouser", async (req, res) => {
-    let user = new User({email: "test@test.com", username: "test"});
-    let newUser = await User.register(user, "password");
-    res.send(newUser);
-});
-
-
-app.get("/signup", (req, res) => {  
-    res.render("users/signup.ejs", {
-        success: req.flash("success"),
-        error: req.flash("error")
-    });
-});
-
-app.post("/signup", async (req, res) => {
-    try {
-        let {username, email, password} = req.body;
-        let newUser = new User({username, email});
-        let registeredUser = await User.register(newUser, password);
-        req.login(registeredUser, (err) => {
-            if(err) return next(err);
-            req.flash("success", "Welcome to Rentwala!");
-            res.redirect("/listings");
-        });
-    } catch(e) {
-        req.flash("error", e.message);
-        res.redirect("/signup");
-    }
-});
-
-// passport user login 
-
-app.get("/login", (req, res) => {
-    res.render("users/login.ejs", {
-        success: req.flash("success"),
-        error: req.flash("error")
-    });
-});
-
-app.post("/login", passport.authenticate("local", {failureRedirect: "/login", failureFlash: true}), async (req, res) => {
-    req.flash("success", "Welcome back");
-    res.redirect("/listings");
-});
-
-// logout route
-app.get("/logout", (req, res) => {
-    req.logout((err) => {
-        if(err) return next(err);
-        
-        req.flash("success", "Goodbye!");
-        res.redirect("/listings");
-        console.log("logout successful");
-    });
-});
-
-
-
-
-
-
-
-// root page route 
-
-app.get("/", (req, res) => {
-    res.send("Root Page");
-});
-
-// app.get("/testlisting" , async (req, res) => {
-//     let sampleListing = new Listing({
-//         title: "my new villa",
-//         description: "latur",
-//         price: 1200,
-//         location: "latur new spot",
-//         country: "India"
-
-//     });
-
-//     await sampleListing.save(); 
-//     res.send(sampleListing);
-//     console.log("succesfull work listing");
-// });
-
-
-// all listings page route 
-app.get("/listings", async (req, res) => {
-    const allListings = await Listing.find({});
-    res.render("listings/index", { listings: allListings });
-});
-
-//new listing route
-app.get("/listings/new", (req, res) => {
-    if (!req.isAuthenticated()) {
-        req.flash("error", "You must be logged in to create a listing");
-        return res.redirect("/login");
-    }
-
-    res.render("listings/new.ejs");
-});
-
-
-
-app.post("/listings", async (req, res, next) => {
-    try {
-        if (!req.body.listing) {
-            throw new Error("No listing data provided");
-        }
-        let newListing = new Listing(req.body.listing);
-        await newListing.save();
-        res.redirect(`/listings/${newListing._id}`);
-    } catch (e) {
-        console.log("Error creating listing:", e);
-        next(e);
-    }
-});
-
-//show route
-
-app.get("/listings/:id",  async (req, res) => {
-    let {id} = req.params;
-    let listing = await Listing.findById(id);
-    res.render("listings/show", {listing});
-});
-
-
-// update route
-app.get("/listings/:id/edit", async (req, res) => {
-    let {id} = req.params;
-    let listing = await Listing.findById(id);
-    res.render("listings/edit", {listing});
-});
-
-
-
-app.put("/listings/:id", async (req, res) => {
-    let {id} = req.params;
-    let listing = await Listing.findByIdAndUpdate(id, req.body.listing, {runValidators: true, new: true});
-    res.redirect(`/listings/${id}`);
-});
-
-
-// delete route
-app.delete("/listings/:id", async (req, res) => {
-    let {id} = req.params;
-   let deletedListing =  await Listing.findByIdAndDelete(id);
-   console.log(deletedListing);
-    res.redirect("/listings");
-});
-
-// error handling middleware
-app.use((err, req, res, next) => {
-    res.status(500).send(err.message);
-});
-
-// review route, post route
-app.post("/listings/:id/reviews", async (req, res) => {
-
-    let listing = await Listing.findById(req.params.id);
-    let newReview = new Review(req.body.review);
-
-    listing.reviews.push(newReview);
-    await newReview.save();
-    await listing.save();
-
-    console.log("new review added ");
-    res.send("new review added ");
-
-});
-
-
-
-
-// port start on page 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
-    
+  main().then(() => {
+      console.log("MongoDB connection was successful");
+  }).catch((err) => {
+      console.error("MongoDB connection failed:", err);
+  });
+  
+  app.use(session(optionSession));
+  app.use(flash());
+  
+  //passpost;
+  app.use(passport.initialize());
+  app.use(passport.session());
+  passport.use(new LocalStrategy(User.authenticate()));
+  
+  passport.serializeUser(User.serializeUser());
+  passport.deserializeUser(User.deserializeUser());
+  
+  
+  app.get("/demo",async (req,res)=>{
+      let fakeUser = new User({
+          email:"Student@gmail.com",
+          username:"Jayakrishna"
+      });
+      let registeredUser = await User.register(fakeUser,"helloWorld");
+      res.send(registeredUser);
+  })
+  
+  
+  
+  
+  
+  app.use((req, res, next) => {
+      res.locals.searchQuery = req.query.q || "";
+      res.locals.placeType = req.query.placeType || "all";
+      next();
+  });
+  
+  app.get("/new",(req,res)=>{
+      res.render("listings/new");
+  })
+  
+  app.use((req,res,next)=>{
+      res.locals.success = req.flash("success");
+      res.locals.error = req.flash("error");
+      res.locals.currUser = req.user;
+      next();
+  })
+  
+  app.get("/listings", async (req, res) => {
+      const { q, placeType } = req.query;
+      let filter = {};
+  
+      if (placeType && placeType !== 'all') {
+          filter.placeType = placeType;
+      }
+  
+      if (q) {
+          filter.title = { $regex: q, $options: 'i' }; // case-insensitive search
+      }
+  
+      const listings = await Listing.find(filter);
+      res.render("listings/index", { listings, placeType: placeType || "all", searchQuery: q || "" });
+  });
+  
+  app.use("/listings",listingRouter);
+  app.use("/listings/:id/reviews",reviewRouter);
+  app.use("/",userRouter);
+  
+  app.get("/search", async (req, res) => {
+      const { q } = req.query;
+      const regex = new RegExp(q, 'i'); // Case-insensitive search
+      const listings = await Listing.find({ title: regex }).limit(5); // You can adjust limit
+      res.json(listings);
+  });
+  
+  
+  
+  //page not found
+  app.all(/.*/,(req,res,next)=>{
+      next(new expressError(404,"page not found "));
+  });
+  
+  // error handling
+  app.use((err,req,res,next)=>{
+      let {statusCode = 500, message = "Something Went wrong!"} = err;
+      res.status(statusCode).render("listings/error.ejs",{message});
+  })
+  
+  app.listen(8080,()=>{
+      console.log("Loading krishna");
+  })
+  
